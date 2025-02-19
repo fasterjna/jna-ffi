@@ -38,14 +38,14 @@ public final class Closure {
                     else if (atype == Type.SINT16
                             || (atype == Type.WCHAR && Native.WCHAR_SIZE == 2L))
                         args[i] = avalues.getShort(avalueOffset);
-                    else if (atype == Type.JCHAR) args[i] = avalues.getChar(avalueOffset);
+                    else if (atype == Type.UNICHAR) args[i] = avalues.getChar(avalueOffset);
                     else if (atype == Type.SINT32
                             || (atype == Type.WCHAR && Native.WCHAR_SIZE == 4L)
-                            || (atype == Type.LONG && Native.LONG_SIZE == 4L)
+                            || (atype == Type.SLONG && Native.LONG_SIZE == 4L)
                             || (atype == Type.SIZE && Native.SIZE_T_SIZE == 4L))
                         args[i] = avalues.getInt(avalueOffset);
                     else if (atype == Type.SINT64
-                            || (atype == Type.LONG && Native.LONG_SIZE == 8L)
+                            || (atype == Type.SLONG && Native.LONG_SIZE == 8L)
                             || (atype == Type.SIZE && Native.SIZE_T_SIZE == 8L))
                         args[i] = avalues.getLong(avalueOffset);
                     else if (atype == Type.FLOAT) args[i] = avalues.getFloat(avalueOffset);
@@ -58,21 +58,21 @@ public final class Closure {
                     else args[i] = avalues.share(avalueOffset, atype.size);
                     avalueOffset += Native.POINTER_SIZE;
                 }
-                Object result = handler.invoke(args);
+                Object result = handler.invoke(Closure.this, args);
                 if (rtype != Type.VOID) {
                     Objects.requireNonNull(result);
                     if (rtype == Type.SINT8) rvalue.setByte(0, ((Number) result).byteValue());
                     else if (rtype == Type.SINT16
                             || (rtype == Type.WCHAR && Native.WCHAR_SIZE == 2L))
                         rvalue.setShort(0, ((Number) result).shortValue());
-                    else if (rtype == Type.JCHAR) rvalue.setChar(0, (Character) result);
+                    else if (rtype == Type.UNICHAR) rvalue.setChar(0, (Character) result);
                     else if (rtype == Type.SINT32
                             || (rtype == Type.WCHAR && Native.WCHAR_SIZE == 4L)
-                            || (rtype == Type.LONG && Native.LONG_SIZE == 4L)
+                            || (rtype == Type.SLONG && Native.LONG_SIZE == 4L)
                             || (rtype == Type.SIZE && Native.SIZE_T_SIZE == 4L))
                         rvalue.setInt(0, ((Number) result).intValue());
                     else if (rtype == Type.SINT64
-                            || (rtype == Type.LONG && Native.LONG_SIZE == 8L)
+                            || (rtype == Type.SLONG && Native.LONG_SIZE == 8L)
                             || (rtype == Type.SIZE && Native.SIZE_T_SIZE == 8L))
                         rvalue.setLong(0, ((Number) result).longValue());
                     else if (rtype == Type.FLOAT) rvalue.setFloat(0, ((Number) result).floatValue());
@@ -110,6 +110,11 @@ public final class Closure {
 
     public long address() {
         return address;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("0x%016X", address);
     }
 
 }

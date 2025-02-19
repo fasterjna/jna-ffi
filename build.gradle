@@ -36,14 +36,19 @@ project(':library') {
     }
 
     publishing {
+        repositories {
+            maven {
+                url projectDir.absolutePath + '/build/repository'
+            }
+        }
         publications {
             mavenJava(MavenPublication) {
                 groupId = 'io.github.fasterjna'
-                artifactId = "fasterjna-jna-ffi"
+                artifactId = "jna-ffi"
                 version = version
                 from components.java
                 pom {
-                    name = 'io.github.fasterjna'
+                    name = 'FasterJNA JNA FFI'
                     description = 'Java FFI based on and faster than JNA'
                     url = 'https://github.com/fasterjna/jna-ffi'
                     licenses {

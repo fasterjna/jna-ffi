@@ -28,7 +28,7 @@ public final class Dispatch {
     static {
         long value;
         try {
-            value = parseMemoryBytes(System.getProperty("jnablow.dispatch.bufferSize"));
+            value = parseMemoryBytes(System.getProperty("jna.ffi.dispatch.bufferSize"));
         }
         catch (Throwable e) {
             value = 4096;
@@ -42,331 +42,291 @@ public final class Dispatch {
         }
     };
 
+    public static void invoke(CallContext context, Function function) {
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), 0L, 0L);
+    }
+
     public static int invokeI0(CallContext context, Function function) {
         Memory buffer = BUFFER.get();
         long rvalue = Pointer.nativeValue(buffer);
-        buffer.setInt(0, 0);
         Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, 0L);
         return buffer.getInt(0);
+    }
+
+    public static float invokeF0(CallContext context, Function function) {
+        Memory buffer = BUFFER.get();
+        long rvalue = Pointer.nativeValue(buffer);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, 0L);
+        return buffer.getFloat(0);
+    }
+
+    public static long invokeL0(CallContext context, Function function) {
+        Memory buffer = BUFFER.get();
+        long rvalue = Pointer.nativeValue(buffer);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, 0L);
+        return buffer.getLong(0);
+    }
+
+    public static double invokeD0(CallContext context, Function function) {
+        Memory buffer = BUFFER.get();
+        long rvalue = Pointer.nativeValue(buffer);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, 0L);
+        return buffer.getDouble(0);
+    }
+
+    private interface Int64Adapter {
+        void setAddress(Pointer pointer, long offset, long value);
+        long getAddress(Pointer pointer, long offset);
+        Int64Adapter SIZE32 = new Int64Adapter() {
+            @Override
+            public void setAddress(Pointer pointer, long offset, long value) {
+                pointer.setInt(offset, (int) value);
+            }
+            @Override
+            public long getAddress(Pointer pointer, long offset) {
+                return pointer.getInt(offset) & 0xFFFFFFFFL;
+            }
+        };
+        Int64Adapter SIZE64 = new Int64Adapter() {
+            @Override
+            public void setAddress(Pointer pointer, long offset, long value) {
+                pointer.setLong(offset, value);
+            }
+            @Override
+            public long getAddress(Pointer pointer, long offset) {
+                return pointer.getLong(offset);
+            }
+        };
+        Int64Adapter ADDRESS = Native.POINTER_SIZE == 8L ? SIZE64 : SIZE32;
     }
 
     public static int invokeI1(CallContext context, Function function, int arg1) {
         Memory buffer = BUFFER.get();
         long rvalue = Pointer.nativeValue(buffer);
-        buffer.setInt(0, 0);
-        if (Native.POINTER_SIZE == 8L) {
-            buffer.setLong(4L, rvalue + 12L);
-            buffer.setInt(12L, arg1);
-        }
-        else {
-            buffer.setInt(4L, (int) (rvalue + 8L));
-            buffer.setInt(8L, arg1);
-        }
-        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 4L);
+        long offset = 4 + Native.POINTER_SIZE;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4, rvalue + offset);
+        buffer.setInt(offset, arg1);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 4);
         return buffer.getInt(0);
+    }
+
+    public static float invokeF1(CallContext context, Function function, float arg1) {
+        Memory buffer = BUFFER.get();
+        long rvalue = Pointer.nativeValue(buffer);
+        long offset = 4 + Native.POINTER_SIZE;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4, rvalue + offset);
+        buffer.setFloat(offset, arg1);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 4);
+        return buffer.getFloat(0);
     }
 
     public static int invokeI2(CallContext context, Function function, int arg1, int arg2) {
         Memory buffer = BUFFER.get();
         long rvalue = Pointer.nativeValue(buffer);
-        buffer.setInt(0, 0);
-        if (Native.POINTER_SIZE == 8L) {
-            buffer.setLong(4L, rvalue + 20L);
-            buffer.setLong(12L, rvalue + 24L);
-            buffer.setInt(20L, arg1);
-            buffer.setInt(24L, arg2);
-        }
-        else {
-            buffer.setInt(4L, (int) (rvalue + 12L));
-            buffer.setInt(8L, (int) (rvalue + 16L));
-            buffer.setInt(12L, arg1);
-            buffer.setInt(16L, arg2);
-        }
-        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 4L);
+        long offset = 4 + Native.POINTER_SIZE * 2L;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4, rvalue + offset);
+        buffer.setInt(offset, arg1);
+        offset += 4;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4 + Native.POINTER_SIZE, rvalue + offset);
+        buffer.setInt(offset, arg2);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 4);
         return buffer.getInt(0);
     }
 
     public static int invokeI3(CallContext context, Function function, int arg1, int arg2, int arg3) {
         Memory buffer = BUFFER.get();
         long rvalue = Pointer.nativeValue(buffer);
-        buffer.setInt(0, 0);
-        if (Native.POINTER_SIZE == 8L) {
-            buffer.setLong(4L, rvalue + 28L);
-            buffer.setLong(12L, rvalue + 32L);
-            buffer.setLong(20L, rvalue + 36L);
-            buffer.setInt(28L, arg1);
-            buffer.setInt(32L, arg2);
-            buffer.setInt(36L, arg3);
-        }
-        else {
-            buffer.setInt(4L, (int) (rvalue + 20L));
-            buffer.setInt(8L, (int) (rvalue + 28L));
-            buffer.setInt(12L, (int) (rvalue + 36L));
-            buffer.setInt(16L, arg1);
-            buffer.setInt(20L, arg2);
-            buffer.setInt(24L, arg3);
-        }
-        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 4L);
+        long offset = 4 + Native.POINTER_SIZE * 3L;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4, rvalue + offset);
+        buffer.setInt(offset, arg1);
+        offset += 4;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4 + Native.POINTER_SIZE, rvalue + offset);
+        buffer.setInt(offset, arg2);
+        offset += 4;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4 + Native.POINTER_SIZE * 2L, rvalue + offset);
+        buffer.setInt(offset, arg3);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 4);
         return buffer.getInt(0);
     }
 
     public static int invokeI4(CallContext context, Function function, int arg1, int arg2, int arg3, int arg4) {
         Memory buffer = BUFFER.get();
         long rvalue = Pointer.nativeValue(buffer);
-        buffer.setInt(0, 0);
-        if (Native.POINTER_SIZE == 8L) {
-            buffer.setLong(4L, rvalue + 36L);
-            buffer.setLong(12L, rvalue + 40L);
-            buffer.setLong(20L, rvalue + 44L);
-            buffer.setLong(28L, rvalue + 48L);
-            buffer.setInt(36L, arg1);
-            buffer.setInt(40L, arg2);
-            buffer.setInt(44L, arg3);
-            buffer.setInt(48L, arg4);
-        }
-        else {
-            buffer.setInt(4L, (int) (rvalue + 20L));
-            buffer.setInt(8L, (int) (rvalue + 24L));
-            buffer.setInt(12L, (int) (rvalue + 28L));
-            buffer.setInt(16L, (int) (rvalue + 32L));
-            buffer.setInt(20L, arg1);
-            buffer.setInt(24L, arg2);
-            buffer.setInt(28L, arg3);
-            buffer.setInt(32L, arg4);
-        }
-        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 4L);
+        long offset = 4 + Native.POINTER_SIZE * 4L;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4, rvalue + offset);
+        buffer.setInt(offset, arg1);
+        offset += 4;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4 + Native.POINTER_SIZE, rvalue + offset);
+        buffer.setInt(offset, arg2);
+        offset += 4;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4 + Native.POINTER_SIZE * 2L, rvalue + offset);
+        buffer.setInt(offset, arg3);
+        offset += 4;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4 + Native.POINTER_SIZE * 3L, rvalue + offset);
+        buffer.setInt(offset, arg4);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 4);
         return buffer.getInt(0);
     }
 
     public static int invokeI5(CallContext context, Function function, int arg1, int arg2, int arg3, int arg4, int arg5) {
         Memory buffer = BUFFER.get();
         long rvalue = Pointer.nativeValue(buffer);
-        buffer.setInt(0, 0);
-        if (Native.POINTER_SIZE == 8L) {
-            buffer.setLong(4L, rvalue + 44L);
-            buffer.setLong(12L, rvalue + 48L);
-            buffer.setLong(20L, rvalue + 52L);
-            buffer.setLong(28L, rvalue + 56L);
-            buffer.setLong(36L, rvalue + 60L);
-            buffer.setInt(44L, arg1);
-            buffer.setInt(48L, arg2);
-            buffer.setInt(52L, arg3);
-            buffer.setInt(56L, arg4);
-            buffer.setInt(60L, arg5);
-        }
-        else {
-            buffer.setInt(4L, (int) (rvalue + 24L));
-            buffer.setInt(8L, (int) (rvalue + 28L));
-            buffer.setInt(12L, (int) (rvalue + 32L));
-            buffer.setInt(16L, (int) (rvalue + 36L));
-            buffer.setInt(20L, (int) (rvalue + 40L));
-            buffer.setInt(24L, arg1);
-            buffer.setInt(28L, arg2);
-            buffer.setInt(32L, arg3);
-            buffer.setInt(36L, arg4);
-            buffer.setInt(40L, arg5);
-        }
-        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 4L);
+        long offset = 4 + Native.POINTER_SIZE * 5L;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4, rvalue + offset);
+        buffer.setInt(offset, arg1);
+        offset += 4;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4 + Native.POINTER_SIZE, rvalue + offset);
+        buffer.setInt(offset, arg2);
+        offset += 4;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4 + Native.POINTER_SIZE * 2L, rvalue + offset);
+        buffer.setInt(offset, arg3);
+        offset += 4;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4 + Native.POINTER_SIZE * 3L, rvalue + offset);
+        buffer.setInt(offset, arg4);
+        offset += 4;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4 + Native.POINTER_SIZE * 4L, rvalue + offset);
+        buffer.setInt(offset, arg5);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 4);
         return buffer.getInt(0);
     }
 
     public static int invokeI6(CallContext context, Function function, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6) {
         Memory buffer = BUFFER.get();
         long rvalue = Pointer.nativeValue(buffer);
-        buffer.setInt(0, 0);
-        if (Native.POINTER_SIZE == 8L) {
-            buffer.setLong(4L, rvalue + 52L);
-            buffer.setLong(12L, rvalue + 56L);
-            buffer.setLong(20L, rvalue + 60L);
-            buffer.setLong(28L, rvalue + 64L);
-            buffer.setLong(36L, rvalue + 68L);
-            buffer.setLong(44L, rvalue + 72L);
-            buffer.setInt(52L, arg1);
-            buffer.setInt(56L, arg2);
-            buffer.setInt(60L, arg3);
-            buffer.setInt(64L, arg4);
-            buffer.setInt(68L, arg5);
-            buffer.setInt(72L, arg6);
-        }
-        else {
-            buffer.setInt(4L, (int) (rvalue + 28L));
-            buffer.setInt(8L, (int) (rvalue + 32L));
-            buffer.setInt(12L, (int) (rvalue + 36L));
-            buffer.setInt(16L, (int) (rvalue + 40L));
-            buffer.setInt(20L, (int) (rvalue + 44L));
-            buffer.setInt(24L, (int) (rvalue + 48L));
-            buffer.setInt(28L, arg1);
-            buffer.setInt(32L, arg2);
-            buffer.setInt(36L, arg3);
-            buffer.setInt(40L, arg4);
-            buffer.setInt(44L, arg5);
-            buffer.setInt(48L, arg6);
-        }
-        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 4L);
+        long offset = 4 + Native.POINTER_SIZE * 6L;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4, rvalue + offset);
+        buffer.setInt(offset, arg1);
+        offset += 4;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4 + Native.POINTER_SIZE, rvalue + offset);
+        buffer.setInt(offset, arg2);
+        offset += 4;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4 + Native.POINTER_SIZE * 2L, rvalue + offset);
+        buffer.setInt(offset, arg3);
+        offset += 4;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4 + Native.POINTER_SIZE * 3L, rvalue + offset);
+        buffer.setInt(offset, arg4);
+        offset += 4;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4 + Native.POINTER_SIZE * 4L, rvalue + offset);
+        buffer.setInt(offset, arg5);
+        offset += 4;
+        Int64Adapter.ADDRESS.setAddress(buffer, 4 + Native.POINTER_SIZE * 5L, rvalue + offset);
+        buffer.setInt(offset, arg6);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 4);
         return buffer.getInt(0);
-    }
-
-    public static long invokeL0(CallContext context, Function function) {
-        Memory buffer = BUFFER.get();
-        long rvalue = Pointer.nativeValue(buffer);
-        buffer.setLong(0, 0L);
-        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, 0L);
-        return buffer.getLong(0);
     }
 
     public static long invokeL1(CallContext context, Function function, long arg1) {
         Memory buffer = BUFFER.get();
         long rvalue = Pointer.nativeValue(buffer);
-        buffer.setLong(0, 0L);
-        if (Native.POINTER_SIZE == 8L) {
-            buffer.setLong(8L, rvalue + 16L);
-            buffer.setLong(16L, arg1);
-        }
-        else {
-            buffer.setInt(8L, (int) (rvalue + 12L));
-            buffer.setLong(12L, arg1);
-        }
-        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 8L);
+        long offset = 8 + Native.POINTER_SIZE;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8, rvalue + offset);
+        buffer.setLong(offset, arg1);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 8);
         return buffer.getLong(0);
+    }
+
+    public static double invokeD1(CallContext context, Function function, double arg1) {
+        Memory buffer = BUFFER.get();
+        long rvalue = Pointer.nativeValue(buffer);
+        long offset = 8 + Native.POINTER_SIZE;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8, rvalue + offset);
+        buffer.setDouble(offset, arg1);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 8);
+        return buffer.getDouble(0);
     }
 
     public static long invokeL2(CallContext context, Function function, long arg1, long arg2) {
         Memory buffer = BUFFER.get();
         long rvalue = Pointer.nativeValue(buffer);
-        buffer.setLong(0, 0L);
-        if (Native.POINTER_SIZE == 8L) {
-            buffer.setLong(8L, rvalue + 24L);
-            buffer.setLong(16L, rvalue + 32L);
-            buffer.setLong(24L, arg1);
-            buffer.setLong(32L, arg2);
-        }
-        else {
-            buffer.setInt(8L, (int) (rvalue + 16L));
-            buffer.setInt(12L, (int) (rvalue + 24L));
-            buffer.setLong(16L, arg1);
-            buffer.setLong(24L, arg2);
-        }
-        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 8L);
+        long offset = 8 + Native.POINTER_SIZE * 2L;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8, rvalue + offset);
+        buffer.setLong(offset, arg1);
+        offset += 8;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8 + Native.POINTER_SIZE, rvalue + offset);
+        buffer.setLong(offset, arg2);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 8);
         return buffer.getLong(0);
     }
 
     public static long invokeL3(CallContext context, Function function, long arg1, long arg2, long arg3) {
         Memory buffer = BUFFER.get();
         long rvalue = Pointer.nativeValue(buffer);
-        buffer.setLong(0, 0L);
-        if (Native.POINTER_SIZE == 8L) {
-            buffer.setLong(8L, rvalue + 32L);
-            buffer.setLong(16L, rvalue + 40L);
-            buffer.setLong(24L, rvalue + 48L);
-            buffer.setLong(32L, arg1);
-            buffer.setLong(40L, arg2);
-            buffer.setLong(48L, arg3);
-        }
-        else {
-            buffer.setInt(8L, (int) (rvalue + 20L));
-            buffer.setInt(12L, (int) (rvalue + 28L));
-            buffer.setInt(16L, (int) (rvalue + 36L));
-            buffer.setLong(20L, arg1);
-            buffer.setLong(28L, arg2);
-            buffer.setLong(36L, arg3);
-        }
-        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 8L);
+        long offset = 8 + Native.POINTER_SIZE * 3L;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8, rvalue + offset);
+        buffer.setLong(offset, arg1);
+        offset += 8;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8 + Native.POINTER_SIZE, rvalue + offset);
+        buffer.setLong(offset, arg2);
+        offset += 8;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8 + Native.POINTER_SIZE * 2L, rvalue + offset);
+        buffer.setLong(offset, arg3);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 8);
         return buffer.getLong(0);
     }
 
     public static long invokeL4(CallContext context, Function function, long arg1, long arg2, long arg3, long arg4) {
         Memory buffer = BUFFER.get();
         long rvalue = Pointer.nativeValue(buffer);
-        buffer.setLong(0, 0L);
-        if (Native.POINTER_SIZE == 8L) {
-            buffer.setLong(8L, rvalue + 40L);
-            buffer.setLong(16L, rvalue + 48L);
-            buffer.setLong(24L, rvalue + 56L);
-            buffer.setLong(32L, rvalue + 64L);
-            buffer.setLong(40L, arg1);
-            buffer.setLong(48L, arg2);
-            buffer.setLong(56L, arg3);
-            buffer.setLong(64L, arg4);
-        }
-        else {
-            buffer.setInt(8L, (int) (rvalue + 24L));
-            buffer.setInt(12L, (int) (rvalue + 32L));
-            buffer.setInt(16L, (int) (rvalue + 40L));
-            buffer.setInt(20L, (int) (rvalue + 48L));
-            buffer.setLong(24L, arg1);
-            buffer.setLong(32L, arg2);
-            buffer.setLong(40L, arg3);
-            buffer.setLong(48L, arg4);
-        }
-        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 8L);
+        long offset = 8 + Native.POINTER_SIZE * 4L;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8, rvalue + offset);
+        buffer.setLong(offset, arg1);
+        offset += 8;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8 + Native.POINTER_SIZE, rvalue + offset);
+        buffer.setLong(offset, arg2);
+        offset += 8;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8 + Native.POINTER_SIZE * 2L, rvalue + offset);
+        buffer.setLong(offset, arg3);
+        offset += 8;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8 + Native.POINTER_SIZE * 3L, rvalue + offset);
+        buffer.setLong(offset, arg4);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 8);
         return buffer.getLong(0);
     }
 
     public static long invokeL5(CallContext context, Function function, long arg1, long arg2, long arg3, long arg4, long arg5) {
         Memory buffer = BUFFER.get();
         long rvalue = Pointer.nativeValue(buffer);
-        buffer.setLong(0, 0L);
-        if (Native.POINTER_SIZE == 8L) {
-            buffer.setLong(8L, rvalue + 48L);
-            buffer.setLong(16L, rvalue + 56L);
-            buffer.setLong(24L, rvalue + 64L);
-            buffer.setLong(32L, rvalue + 72L);
-            buffer.setLong(40L, rvalue + 80L);
-            buffer.setLong(48L, arg1);
-            buffer.setLong(56L, arg2);
-            buffer.setLong(64L, arg3);
-            buffer.setLong(72L, arg4);
-            buffer.setLong(80L, arg5);
-        }
-        else {
-            buffer.setInt(8L, (int) (rvalue + 28L));
-            buffer.setInt(12L, (int) (rvalue + 36L));
-            buffer.setInt(16L, (int) (rvalue + 44L));
-            buffer.setInt(20L, (int) (rvalue + 52L));
-            buffer.setInt(24L, (int) (rvalue + 60L));
-            buffer.setLong(28L, arg1);
-            buffer.setLong(36L, arg2);
-            buffer.setLong(44L, arg3);
-            buffer.setLong(52L, arg4);
-            buffer.setLong(60L, arg5);
-        }
-        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 8L);
+        long offset = 8 + Native.POINTER_SIZE * 5L;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8, rvalue + offset);
+        buffer.setLong(offset, arg1);
+        offset += 8;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8 + Native.POINTER_SIZE, rvalue + offset);
+        buffer.setLong(offset, arg2);
+        offset += 8;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8 + Native.POINTER_SIZE * 2L, rvalue + offset);
+        buffer.setLong(offset, arg3);
+        offset += 8;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8 + Native.POINTER_SIZE * 3L, rvalue + offset);
+        buffer.setLong(offset, arg4);
+        offset += 8;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8 + Native.POINTER_SIZE * 4L, rvalue + offset);
+        buffer.setLong(offset, arg5);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 8);
         return buffer.getLong(0);
     }
 
     public static long invokeL6(CallContext context, Function function, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6) {
         Memory buffer = BUFFER.get();
         long rvalue = Pointer.nativeValue(buffer);
-        buffer.setLong(0, 0L);
-        if (Native.POINTER_SIZE == 8L) {
-            buffer.setLong(8L, rvalue + 56L);
-            buffer.setLong(16L, rvalue + 64L);
-            buffer.setLong(24L, rvalue + 72L);
-            buffer.setLong(32L, rvalue + 80L);
-            buffer.setLong(40L, rvalue + 88L);
-            buffer.setLong(48L, rvalue + 96L);
-            buffer.setLong(56L, arg1);
-            buffer.setLong(64L, arg2);
-            buffer.setLong(72L, arg3);
-            buffer.setLong(80L, arg4);
-            buffer.setLong(88L, arg5);
-            buffer.setLong(96L, arg6);
-        }
-        else {
-            buffer.setInt(8L, (int) (rvalue + 32L));
-            buffer.setInt(12L, (int) (rvalue + 40L));
-            buffer.setInt(16L, (int) (rvalue + 48L));
-            buffer.setInt(20L, (int) (rvalue + 56L));
-            buffer.setInt(24L, (int) (rvalue + 64L));
-            buffer.setInt(28L, (int) (rvalue + 72L));
-            buffer.setLong(32L, arg1);
-            buffer.setLong(40L, arg2);
-            buffer.setLong(48L, arg3);
-            buffer.setLong(56L, arg4);
-            buffer.setLong(64L, arg5);
-            buffer.setLong(72L, arg6);
-        }
-        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 8L);
+        long offset = 8 + Native.POINTER_SIZE * 6L;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8, rvalue + offset);
+        buffer.setLong(offset, arg1);
+        offset += 8;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8 + Native.POINTER_SIZE, rvalue + offset);
+        buffer.setLong(offset, arg2);
+        offset += 8;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8 + Native.POINTER_SIZE * 2L, rvalue + offset);
+        buffer.setLong(offset, arg3);
+        offset += 8;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8 + Native.POINTER_SIZE * 3L, rvalue + offset);
+        buffer.setLong(offset, arg4);
+        offset += 8;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8 + Native.POINTER_SIZE * 4L, rvalue + offset);
+        buffer.setLong(offset, arg5);
+        offset += 8;
+        Int64Adapter.ADDRESS.setAddress(buffer, 8 + Native.POINTER_SIZE * 5L, rvalue + offset);
+        buffer.setLong(offset, arg6);
+        Native.ffi_call(context.handle, Pointer.nativeValue(function), rvalue, rvalue + 8);
         return buffer.getLong(0);
     }
 
@@ -375,8 +335,6 @@ public final class Dispatch {
 
         Type rtype = context.rtype;
         Type[] atypes = context.atypes;
-        if (Native.POINTER_SIZE == 8L) buffer.setLong(0, 0L);
-        else buffer.setInt(0, 0);
         long rvalue = Pointer.nativeValue(buffer);
         long avaluesOffset;
         if (rtype.compound) avaluesOffset = Native.POINTER_SIZE;
@@ -388,29 +346,25 @@ public final class Dispatch {
                 Type atype = atypes[i];
                 if (atype.compound) buffer.setPointer(avaluesOffset + (long) Native.POINTER_SIZE * i, (Pointer) arg);
                 else {
-                    if (Native.POINTER_SIZE == 8L) buffer.setLong(avaluesOffset + (long) Native.POINTER_SIZE * i, rvalue + avalueOffset);
-                    else buffer.setInt(avaluesOffset + (long) Native.POINTER_SIZE * i, (int) (rvalue + avalueOffset));
+                    Int64Adapter.ADDRESS.setAddress(buffer, avaluesOffset + (long) Native.POINTER_SIZE * i, rvalue + avalueOffset);
                     if (atype == Type.SINT8) buffer.setByte(avalueOffset, ((Number) arg).byteValue());
                     else if (atype == Type.SINT16
                             || (atype == Type.WCHAR && Native.WCHAR_SIZE == 2L))
                         buffer.setShort(avalueOffset, ((Number) arg).shortValue());
-                    else if (atype == Type.JCHAR) buffer.setChar(avalueOffset, (Character) arg);
+                    else if (atype == Type.UNICHAR) buffer.setChar(avalueOffset, (Character) arg);
                     else if (atype == Type.SINT32
                             || (atype == Type.WCHAR && Native.WCHAR_SIZE == 4L)
-                            || (atype == Type.LONG && Native.LONG_SIZE == 4L)
+                            || (atype == Type.SLONG && Native.LONG_SIZE == 4L)
                             || (atype == Type.SIZE && Native.SIZE_T_SIZE == 4L))
                         buffer.setInt(avalueOffset, ((Number) arg).intValue());
                     else if (atype == Type.SINT64
-                            || (atype == Type.LONG && Native.LONG_SIZE == 8L)
+                            || (atype == Type.SLONG && Native.LONG_SIZE == 8L)
                             || (atype == Type.SIZE && Native.SIZE_T_SIZE == 8L))
                         buffer.setLong(avalueOffset, ((Number) arg).longValue());
                     else if (atype == Type.FLOAT) buffer.setFloat(avalueOffset, ((Number) arg).floatValue());
                     else if (atype == Type.DOUBLE) buffer.setDouble(avalueOffset, ((Number) arg).doubleValue());
                     else if (atype == Type.POINTER) buffer.setPointer(avalueOffset, (Pointer) arg);
-                    else if (atype == Type.BOOLEAN) {
-                        if (Native.POINTER_SIZE == 8L) buffer.setLong(avalueOffset, ((Boolean) arg) ? 1L : 0L);
-                        else buffer.setInt(avalueOffset, ((Boolean) arg) ? 1 : 0);
-                    }
+                    else if (atype == Type.BOOLEAN) Int64Adapter.ADDRESS.setAddress(buffer, avalueOffset, ((Boolean) arg) ? 1L : 0L);
                     avalueOffset += atype.size;
                 }
             }
@@ -422,23 +376,20 @@ public final class Dispatch {
         else if (rtype == Type.SINT16
                 || (rtype == Type.WCHAR && Native.WCHAR_SIZE == 2L))
             return buffer.getShort(0);
-        else if (rtype == Type.JCHAR) return buffer.getChar(0);
+        else if (rtype == Type.UNICHAR) return buffer.getChar(0);
         else if (rtype == Type.SINT32
                 || (rtype == Type.WCHAR && Native.WCHAR_SIZE == 4L)
-                || (rtype == Type.LONG && Native.LONG_SIZE == 4L)
+                || (rtype == Type.SLONG && Native.LONG_SIZE == 4L)
                 || (rtype == Type.SIZE && Native.SIZE_T_SIZE == 4L))
             return buffer.getInt(0);
         else if (rtype == Type.SINT64
-                || (rtype == Type.LONG && Native.LONG_SIZE == 8L)
+                || (rtype == Type.SLONG && Native.LONG_SIZE == 8L)
                 || (rtype == Type.SIZE && Native.SIZE_T_SIZE == 8L))
             return buffer.getLong(0);
         else if (rtype == Type.FLOAT) return buffer.getFloat(0);
         else if (rtype == Type.DOUBLE) return buffer.getDouble(0);
-        else if (rtype == Type.POINTER) return buffer.getPointer(0);
-        else if (rtype == Type.BOOLEAN) {
-            if (Native.POINTER_SIZE == 8L) return buffer.getLong(0) != 0L;
-            else return buffer.getInt(0) != 0;
-        }
+        else if (rtype == Type.POINTER) return new Pointer(Int64Adapter.ADDRESS.getAddress(buffer, 0));
+        else if (rtype == Type.BOOLEAN) return Int64Adapter.ADDRESS.getAddress(buffer, 0) != 0;
         else {
             Pointer arg = (Pointer) args[0];
             memcpy(arg, buffer.getPointer(0), rtype.size);

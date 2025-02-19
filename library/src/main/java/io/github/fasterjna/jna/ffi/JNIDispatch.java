@@ -76,7 +76,7 @@ public final class JNIDispatch {
         }
     }
 
-    private static Function findSymbol(String functionName) throws UnsatisfiedLinkError {
+    private static Function findFunction(String functionName) throws UnsatisfiedLinkError {
         if (Platform.isAndroid()) return NativeLibrary.getProcess().getFunction(functionName);
         else {
             try {
@@ -94,7 +94,7 @@ public final class JNIDispatch {
     }
 
     private static final Map<String, ?> ALLOW_OBJECTS = Collections.singletonMap(Library.OPTION_ALLOW_OBJECTS, Boolean.TRUE);
-    private static final Function ffi_error = findSymbol("ffi_error");
+    private static final Function ffi_error = findFunction("ffi_error");
     public static boolean ffi_error(String op, int status) {
         return (boolean) ffi_error.invoke(boolean.class, new Object[] { JNIEnv.CURRENT, op, status }, ALLOW_OBJECTS);
     }
@@ -103,7 +103,7 @@ public final class JNIDispatch {
         return new Pointer(cif).getInt(0);
     }
 
-    private static final Function ffi_prep_cif_var = findSymbol("ffi_prep_cif_var");
+    private static final Function ffi_prep_cif_var = findFunction("ffi_prep_cif_var");
     public static int ffi_prep_cif_var(long cif, int abi, int nfixedargs, int ntotalargs, long rtype, long atypes) {
         return ffi_prep_cif_var.invokeInt(new Object[] { new Pointer(cif), abi, nfixedargs, ntotalargs, new Pointer(rtype), new Pointer(atypes) });
     }
